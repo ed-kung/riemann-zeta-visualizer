@@ -18,13 +18,15 @@ const ANIM_DT = 0.02;
 // plotted or smoothed toward.
 const TRACE_BOUND = 1e5;
 
-// Adaptive smoothing for the output trace: when two consecutively-sampled
-// input points map to output points more than this many pixels apart,
-// bisect the input segment and insert the midpoint's image, recursively,
-// so curved regions of the trace (where ζ varies quickly) don't render as
-// visible straight chords.
-const SMOOTH_MAX_PX_GAP = 6;
-const SMOOTH_MAX_DEPTH = 8;
+// Adaptive smoothing for the output trace: recursively bisects the input
+// segment between two consecutively-sampled points whenever the output
+// curve between them isn't flat — either the endpoints are more than this
+// many pixels apart, or (the case a plain endpoint-distance check misses)
+// the midpoint's image bows away from the straight chord between the
+// endpoints by more than half that — so curvature hiding between two
+// coincidentally-close endpoints still gets refined.
+const SMOOTH_MAX_PX_GAP = 3;
+const SMOOTH_MAX_DEPTH = 12;
 
 const inputCanvas = document.getElementById('canvas-input');
 const outputCanvas = document.getElementById('canvas-output');
@@ -412,19 +414,35 @@ function samplePoint(clientX, clientY) {
   return domainPt;
 }
 
+// Perpendicular distance from point p to the segment a-b, in the same
+// (pixel) units as p/a/b.
+function pointToSegmentDistance(p, a, b) {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lenSq = abx * abx + aby * aby;
+  if (lenSq < 1e-9) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const projX = a.x + t * abx;
+  const projY = a.y + t * aby;
+  return Math.hypot(p.x - projX, p.y - projY);
+}
+
 // Recursively bisects the input segment (pPrev -> pNew) whenever its output
-// image (wPrev -> wNew) spans more than SMOOTH_MAX_PX_GAP pixels, pushing
-// the resulting finer chain of points/traces onto `stroke`. Assumes pPrev
-// (and wPrev) is already the last entry in stroke.points/trace; pushes
-// everything from just after pPrev through pNew, inclusive.
+// image (wPrev -> wNew) isn't visually flat, pushing the resulting finer
+// chain of points/traces onto `stroke`. Assumes pPrev (and wPrev) is
+// already the last entry in stroke.points/trace; pushes everything from
+// just after pPrev through pNew, inclusive.
 function subdivideAndPush(stroke, pPrev, wPrev, pNew, wNew, depth) {
-  const canRefine = isUsablePoint(wPrev) && isUsablePoint(wNew) && depth < SMOOTH_MAX_DEPTH;
-  if (canRefine) {
-    const gapA = outputT.toPx(wPrev.re, wPrev.im);
-    const gapB = outputT.toPx(wNew.re, wNew.im);
-    if (Math.hypot(gapA.x - gapB.x, gapA.y - gapB.y) > SMOOTH_MAX_PX_GAP) {
-      const mid = { re: (pPrev.re + pNew.re) / 2, im: (pPrev.im + pNew.im) / 2 };
-      const wMid = zeta(mid);
+  if (depth < SMOOTH_MAX_DEPTH && isUsablePoint(wPrev) && isUsablePoint(wNew)) {
+    const mid = { re: (pPrev.re + pNew.re) / 2, im: (pPrev.im + pNew.im) / 2 };
+    const wMid = zeta(mid);
+    const a = outputT.toPx(wPrev.re, wPrev.im);
+    const b = outputT.toPx(wNew.re, wNew.im);
+    const needsSplit = !isUsablePoint(wMid)
+      || Math.hypot(b.x - a.x, b.y - a.y) > SMOOTH_MAX_PX_GAP
+      || pointToSegmentDistance(outputT.toPx(wMid.re, wMid.im), a, b) > SMOOTH_MAX_PX_GAP / 2;
+    if (needsSplit) {
       subdivideAndPush(stroke, pPrev, wPrev, mid, wMid, depth + 1);
       subdivideAndPush(stroke, mid, wMid, pNew, wNew, depth + 1);
       return;
