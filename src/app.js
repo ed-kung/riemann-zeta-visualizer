@@ -546,8 +546,8 @@ speedSlider.addEventListener('input', () => {
 
 const VLINE_SIGMA_MIN = -1;
 const VLINE_SIGMA_MAX = 2;
-const VLINE_T_MIN = -1;
-const VLINE_T_MAX = 1;
+const VLINE_T_MIN = -2;
+const VLINE_T_MAX = 2;
 const VLINE_COUNT = 100;
 const VLINE_STEPS = 40; // coarse samples along each line before adaptive smoothing
 
