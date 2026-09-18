@@ -334,6 +334,22 @@ body {
 
 .footnote p { margin: 0; }
 
+.footnote p.credit {
+  margin-top: 10px;
+}
+
+.credit a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.credit a:hover { text-decoration: underline; }
+
+.credit img { border-radius: 3px; }
+
 /* ---- mobile: stack input on top, output below ---- */
 
 @media (max-width: 800px) {
