@@ -58,7 +58,7 @@
           <h3>Animate the critical line &nbsp;<span class="math">&sigma; = 1/2</span></h3>
           <div class="anim-row">
             <div class="anim-buttons">
-              <button id="btn-play" type="button" class="btn btn-primary">Play</button>
+              <button id="btn-play" type="button" class="btn btn-primary btn-play-toggle">Play</button>
               <button id="btn-reset" type="button" class="btn">Reset</button>
             </div>
             <div class="speed-control">
@@ -79,7 +79,7 @@
           <h3>Animate vertical line family &nbsp;<span class="math">&sigma; = -1 &hellip; 2</span></h3>
           <div class="anim-row">
             <div class="anim-buttons">
-              <button id="btn-vlines-play" type="button" class="btn btn-primary">Play</button>
+              <button id="btn-vlines-play" type="button" class="btn btn-primary btn-play-toggle">Play</button>
               <button id="btn-vlines-reset" type="button" class="btn">Reset</button>
             </div>
             <div class="speed-control">
@@ -87,10 +87,20 @@
               <input id="vlines-speed" type="range" min="10" max="200" step="10" value="80" />
             </div>
           </div>
+          <div class="anim-row">
+            <div class="anim-buttons" aria-hidden="true" style="visibility: hidden;">
+              <button type="button" class="btn btn-play-toggle">Play</button>
+              <button type="button" class="btn">Reset</button>
+            </div>
+            <div class="speed-control">
+              <label for="vlines-midpoint">Midpoint &mdash; t=<span id="vlines-midpoint-value">0</span></label>
+              <input id="vlines-midpoint" type="range" min="-2" max="42" step="0.1" value="0" />
+            </div>
+          </div>
           <div class="anim-readout">
             <span id="vlines-readout" class="t-readout">0 / 100 lines</span>
           </div>
-          <p class="panel-hint vlines-hint">100 lines, evenly spaced in &sigma;, each from t = -3 to t = +3</p>
+          <p class="panel-hint vlines-hint">100 lines, evenly spaced in &sigma;, each from t = <span id="vlines-tmin">-1</span> to t = <span id="vlines-tmax">+1</span></p>
         </div>
       </div>
     </section>

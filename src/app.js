@@ -43,6 +43,10 @@ const btnVLinesReset = document.getElementById('btn-vlines-reset');
 const vlinesSpeedSlider = document.getElementById('vlines-speed');
 const vlinesSpeedValue = document.getElementById('vlines-speed-value');
 const vlinesReadout = document.getElementById('vlines-readout');
+const vlinesMidpointSlider = document.getElementById('vlines-midpoint');
+const vlinesMidpointValue = document.getElementById('vlines-midpoint-value');
+const vlinesTMin = document.getElementById('vlines-tmin');
+const vlinesTMax = document.getElementById('vlines-tmax');
 
 function getColors() {
   const cs = getComputedStyle(document.documentElement);
@@ -147,6 +151,27 @@ function updateZeroUI() {
 
 // ---- drawing helpers ----
 
+// Draws a small filled triangle at (x, y) pointing 'up' or 'right', used to
+// cap an axis line at the edge of the canvas.
+function drawAxisArrow(ctx, x, y, direction, color) {
+  const size = 6;
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (direction === 'up') {
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - size / 2, y + size);
+    ctx.lineTo(x + size / 2, y + size);
+  } else {
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - size, y - size / 2);
+    ctx.lineTo(x - size, y + size / 2);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawGridAndAxes(ctx, width, height, domain, transform, colors, { labelStep, labelAxis }) {
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = colors.surface;
@@ -186,6 +211,14 @@ function drawGridAndAxes(ctx, width, height, domain, transform, colors, { labelS
     ctx.moveTo(x, 0);
     ctx.lineTo(x, height);
     ctx.stroke();
+    if (labelAxis) {
+      drawAxisArrow(ctx, x, 0, 'up', colors.axis);
+      ctx.save();
+      ctx.fillStyle = colors.axis;
+      ctx.font = 'italic 13px system-ui, sans-serif';
+      ctx.fillText(labelAxis.im, x + 6, 13);
+      ctx.restore();
+    }
   }
   if (domain.imMin < 0 && domain.imMax > 0) {
     const { y } = transform.toPx(0, 0);
@@ -193,6 +226,15 @@ function drawGridAndAxes(ctx, width, height, domain, transform, colors, { labelS
     ctx.moveTo(0, y);
     ctx.lineTo(width, y);
     ctx.stroke();
+    if (labelAxis) {
+      drawAxisArrow(ctx, width, y, 'right', colors.axis);
+      ctx.save();
+      ctx.fillStyle = colors.axis;
+      ctx.font = 'italic 13px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(labelAxis.re, width - 6, y - 6);
+      ctx.restore();
+    }
   }
 
   // tick labels
@@ -210,7 +252,7 @@ function drawGridAndAxes(ctx, width, height, domain, transform, colors, { labelS
 }
 
 function drawInputBackground(ctx, width, height, colors) {
-  drawGridAndAxes(ctx, width, height, INPUT_DOMAIN, inputT, colors, { labelStep: 5 });
+  drawGridAndAxes(ctx, width, height, INPUT_DOMAIN, inputT, colors, { labelStep: 5, labelAxis: { re: 'σ', im: 't' } });
 
   // critical strip 0 <= Re(s) <= 1
   const p0 = inputT.toPx(0, 0);
@@ -546,22 +588,21 @@ speedSlider.addEventListener('input', () => {
 
 const VLINE_SIGMA_MIN = -1;
 const VLINE_SIGMA_MAX = 2;
-const VLINE_T_MIN = -3;
-const VLINE_T_MAX = 3;
+const VLINE_T_HALF_RANGE = 1;
 const VLINE_COUNT = 100;
 const VLINE_STEPS = 40; // coarse samples along each line before adaptive smoothing
 
 // Builds one vertical-line stroke at Re(s) = sigma, reusing the same
 // adaptive subdivision as freehand drawing so the trace stays smooth
-// near the pole s=1 (which this sigma/t range passes right through).
-function buildVerticalLine(sigma, color) {
+// near the pole s=1 (which this sigma/t range can pass right through).
+function buildVerticalLine(sigma, tMin, tMax, color) {
   const stroke = { color, points: [], trace: [], isVLine: true };
-  let pPrev = { re: sigma, im: VLINE_T_MIN };
+  let pPrev = { re: sigma, im: tMin };
   let wPrev = zeta(pPrev);
   stroke.points.push(pPrev);
   stroke.trace.push(wPrev);
   for (let i = 1; i <= VLINE_STEPS; i++) {
-    const pNew = { re: sigma, im: VLINE_T_MIN + (VLINE_T_MAX - VLINE_T_MIN) * (i / VLINE_STEPS) };
+    const pNew = { re: sigma, im: tMin + (tMax - tMin) * (i / VLINE_STEPS) };
     const wNew = zeta(pNew);
     subdivideAndPush(stroke, pPrev, wPrev, pNew, wNew, 0);
     pPrev = pNew;
@@ -572,10 +613,13 @@ function buildVerticalLine(sigma, color) {
 
 function computeVerticalLines() {
   const palette = strokeColors();
+  const midpoint = parseFloat(vlinesMidpointSlider.value);
+  const tMin = midpoint - VLINE_T_HALF_RANGE;
+  const tMax = midpoint + VLINE_T_HALF_RANGE;
   const lines = [];
   for (let i = 0; i < VLINE_COUNT; i++) {
     const sigma = VLINE_SIGMA_MIN + (VLINE_SIGMA_MAX - VLINE_SIGMA_MIN) * (i / (VLINE_COUNT - 1));
-    lines.push(buildVerticalLine(sigma, palette[i % palette.length]));
+    lines.push(buildVerticalLine(sigma, tMin, tMax, palette[i % palette.length]));
   }
   return lines;
 }
@@ -622,7 +666,23 @@ vlinesSpeedSlider.addEventListener('input', () => {
   vlinesSpeedValue.textContent = vlinesSpeedSlider.value;
 });
 
+function updateVLinesRangeUI() {
+  const midpoint = parseFloat(vlinesMidpointSlider.value);
+  vlinesTMin.textContent = (midpoint - VLINE_T_HALF_RANGE).toFixed(1);
+  vlinesTMax.textContent = (midpoint + VLINE_T_HALF_RANGE).toFixed(1);
+}
+
+vlinesMidpointSlider.addEventListener('input', () => {
+  vlinesMidpointValue.textContent = vlinesMidpointSlider.value;
+  updateVLinesRangeUI();
+  vlineAnim.lines = null;
+  setVLinesPlaying(false);
+  resetVLines();
+  dirty = true;
+});
+
 updateVLinesUI();
+updateVLinesRangeUI();
 
 // ---- main loop ----
 
