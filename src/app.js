@@ -141,7 +141,7 @@ function updateZeroUI() {
     dots[i].classList.toggle('crossed', anim.crossed[i]);
   }
   const n = anim.crossed.filter(Boolean).length;
-  zeroCount.textContent = `${n} / ${KNOWN_ZERO_T.length} zeros found`;
+  zeroCount.textContent = `${n} zeros found`;
   tReadout.textContent = `t = ${anim.t.toFixed(2)}`;
 }
 
