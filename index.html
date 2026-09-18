@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Riemann Zeta Visualizer</title>
+  <meta name="description" content="Draw on the complex plane and watch the Riemann zeta function trace the result, or animate the critical line through its first zeros." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%CE%B6</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <h1>Riemann Zeta Visualizer</h1>
+      <p class="subtitle">
+        Draw a curve on the input plane <span class="math">s = &sigma; + it</span> and watch
+        <span class="math">&zeta;(s)</span> trace the output plane &mdash; or animate the
+        critical line <span class="math">&sigma; = 1/2</span> through its first zeros.
+      </p>
+    </header>
+
+    <main class="stage">
+      <section class="panel" id="panel-input" aria-label="Input plane, s equals sigma plus i t">
+        <div class="panel-head">
+          <h2>Input plane &nbsp;<span class="math">s = &sigma; + it</span></h2>
+          <p class="panel-hint">Draw with mouse or finger</p>
+        </div>
+        <div class="canvas-wrap" id="wrap-input">
+          <canvas id="canvas-input"></canvas>
+        </div>
+      </section>
+
+      <div class="stage-arrow" aria-hidden="true">
+        <span class="arrow-icon arrow-row">&#8594;</span>
+        <span class="arrow-icon arrow-col">&#8595;</span>
+        <span class="arrow-label">&zeta;(s)</span>
+      </div>
+
+      <section class="panel" id="panel-output" aria-label="Output plane, zeta of s">
+        <div class="panel-head">
+          <h2>Output plane &nbsp;<span class="math">&zeta;(s)</span></h2>
+          <p class="panel-hint">The image of your curve</p>
+        </div>
+        <div class="canvas-wrap" id="wrap-output">
+          <canvas id="canvas-output"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <section class="controls" aria-label="Controls">
+      <div class="control-group">
+        <h3>Draw</h3>
+        <button id="btn-clear" type="button" class="btn">Clear drawing</button>
+      </div>
+
+      <div class="control-group control-group-anim">
+        <h3>Animate the critical line &nbsp;<span class="math">&sigma; = 1/2</span></h3>
+        <div class="anim-row">
+          <div class="anim-buttons">
+            <button id="btn-play" type="button" class="btn btn-primary">Play</button>
+            <button id="btn-reset" type="button" class="btn">Reset</button>
+          </div>
+          <div class="speed-control">
+            <label for="speed">Speed &mdash; <span id="speed-value">4</span> t/s</label>
+            <input id="speed" type="range" min="1" max="15" step="0.5" value="4" />
+          </div>
+        </div>
+        <div class="anim-readout">
+          <span id="t-readout" class="t-readout">t = 0.00</span>
+          <div class="zero-progress">
+            <div class="zero-track" id="zero-track" aria-hidden="true"></div>
+            <span id="zero-count">0 / 6 zeros found</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footnote">
+      <p>
+        Nontrivial zeros of &zeta;(s) lie on the critical line &sigma; = 1/2 (per the Riemann
+        Hypothesis). As t sweeps upward, the output trace spirals through the origin each time
+        it crosses a zero &mdash; the first six occur near t &asymp; 14.13, 21.02, 25.01, 30.42,
+        32.94, and 37.59.
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
