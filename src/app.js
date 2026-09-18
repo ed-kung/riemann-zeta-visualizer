@@ -38,6 +38,11 @@ const speedValue = document.getElementById('speed-value');
 const tReadout = document.getElementById('t-readout');
 const zeroTrack = document.getElementById('zero-track');
 const zeroCount = document.getElementById('zero-count');
+const btnVLinesPlay = document.getElementById('btn-vlines-play');
+const btnVLinesReset = document.getElementById('btn-vlines-reset');
+const vlinesSpeedSlider = document.getElementById('vlines-speed');
+const vlinesSpeedValue = document.getElementById('vlines-speed-value');
+const vlinesReadout = document.getElementById('vlines-readout');
 
 function getColors() {
   const cs = getComputedStyle(document.documentElement);
@@ -495,6 +500,8 @@ inputCanvas.addEventListener('pointercancel', endStroke);
 btnClear.addEventListener('click', () => {
   strokes.length = 0;
   colorIdx = 0;
+  resetVLines();
+  setVLinesPlaying(false);
   resetAnim();
   setPlaying(false);
   dirty = true;
@@ -535,6 +542,88 @@ speedSlider.addEventListener('input', () => {
   speedValue.textContent = speedSlider.value;
 });
 
+// ---- vertical line family animation ----
+
+const VLINE_SIGMA_MIN = -1;
+const VLINE_SIGMA_MAX = 2;
+const VLINE_T_MIN = -1;
+const VLINE_T_MAX = 1;
+const VLINE_COUNT = 100;
+const VLINE_STEPS = 40; // coarse samples along each line before adaptive smoothing
+
+// Builds one vertical-line stroke at Re(s) = sigma, reusing the same
+// adaptive subdivision as freehand drawing so the trace stays smooth
+// near the pole s=1 (which this sigma/t range passes right through).
+function buildVerticalLine(sigma, color) {
+  const stroke = { color, points: [], trace: [], isVLine: true };
+  let pPrev = { re: sigma, im: VLINE_T_MIN };
+  let wPrev = zeta(pPrev);
+  stroke.points.push(pPrev);
+  stroke.trace.push(wPrev);
+  for (let i = 1; i <= VLINE_STEPS; i++) {
+    const pNew = { re: sigma, im: VLINE_T_MIN + (VLINE_T_MAX - VLINE_T_MIN) * (i / VLINE_STEPS) };
+    const wNew = zeta(pNew);
+    subdivideAndPush(stroke, pPrev, wPrev, pNew, wNew, 0);
+    pPrev = pNew;
+    wPrev = wNew;
+  }
+  return stroke;
+}
+
+function computeVerticalLines() {
+  const palette = strokeColors();
+  const lines = [];
+  for (let i = 0; i < VLINE_COUNT; i++) {
+    const sigma = VLINE_SIGMA_MIN + (VLINE_SIGMA_MAX - VLINE_SIGMA_MIN) * (i / (VLINE_COUNT - 1));
+    lines.push(buildVerticalLine(sigma, palette[i % palette.length]));
+  }
+  return lines;
+}
+
+// lines: precomputed lazily (colors are read from CSS at that point, same
+// as freehand strokes), then revealed one at a time as `count` advances.
+const vlineAnim = { playing: false, count: 0, progress: 0, lines: null };
+
+function updateVLinesUI() {
+  vlinesReadout.textContent = `${vlineAnim.count} / ${VLINE_COUNT} lines`;
+}
+
+function resetVLines() {
+  for (let i = strokes.length - 1; i >= 0; i--) {
+    if (strokes[i].isVLine) strokes.splice(i, 1);
+  }
+  vlineAnim.count = 0;
+  vlineAnim.progress = 0;
+  updateVLinesUI();
+}
+
+function setVLinesPlaying(playing) {
+  vlineAnim.playing = playing;
+  btnVLinesPlay.textContent = playing ? 'Pause' : (vlineAnim.count >= VLINE_COUNT ? 'Replay' : 'Play');
+}
+
+btnVLinesPlay.addEventListener('click', () => {
+  if (vlineAnim.playing) {
+    setVLinesPlaying(false);
+    return;
+  }
+  if (!vlineAnim.lines) vlineAnim.lines = computeVerticalLines();
+  if (vlineAnim.count >= VLINE_COUNT) resetVLines();
+  setVLinesPlaying(true);
+});
+
+btnVLinesReset.addEventListener('click', () => {
+  resetVLines();
+  setVLinesPlaying(false);
+  dirty = true;
+});
+
+vlinesSpeedSlider.addEventListener('input', () => {
+  vlinesSpeedValue.textContent = vlinesSpeedSlider.value;
+});
+
+updateVLinesUI();
+
 // ---- main loop ----
 
 let lastTs = null;
@@ -560,6 +649,22 @@ function frame(ts) {
 
     if (anim.t >= ANIM_T_MAX) {
       setPlaying(false);
+    }
+  }
+
+  if (vlineAnim.playing) {
+    const vlinesSpeed = parseFloat(vlinesSpeedSlider.value);
+    vlineAnim.progress += vlinesSpeed * dt;
+    while (vlineAnim.progress >= 1 && vlineAnim.count < VLINE_COUNT) {
+      strokes.push(vlineAnim.lines[vlineAnim.count]);
+      vlineAnim.count++;
+      vlineAnim.progress -= 1;
+      dirty = true;
+    }
+    updateVLinesUI();
+
+    if (vlineAnim.count >= VLINE_COUNT) {
+      setVLinesPlaying(false);
     }
   }
 

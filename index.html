@@ -53,24 +53,44 @@
         <button id="btn-clear" type="button" class="btn">Clear drawing</button>
       </div>
 
-      <div class="control-group control-group-anim">
-        <h3>Animate the critical line &nbsp;<span class="math">&sigma; = 1/2</span></h3>
-        <div class="anim-row">
-          <div class="anim-buttons">
-            <button id="btn-play" type="button" class="btn btn-primary">Play</button>
-            <button id="btn-reset" type="button" class="btn">Reset</button>
+      <div class="control-stack">
+        <div class="control-group control-group-anim">
+          <h3>Animate the critical line &nbsp;<span class="math">&sigma; = 1/2</span></h3>
+          <div class="anim-row">
+            <div class="anim-buttons">
+              <button id="btn-play" type="button" class="btn btn-primary">Play</button>
+              <button id="btn-reset" type="button" class="btn">Reset</button>
+            </div>
+            <div class="speed-control">
+              <label for="speed">Speed &mdash; <span id="speed-value">4</span> t/s</label>
+              <input id="speed" type="range" min="1" max="15" step="0.5" value="4" />
+            </div>
           </div>
-          <div class="speed-control">
-            <label for="speed">Speed &mdash; <span id="speed-value">4</span> t/s</label>
-            <input id="speed" type="range" min="1" max="15" step="0.5" value="4" />
+          <div class="anim-readout">
+            <span id="t-readout" class="t-readout">t = 0.00</span>
+            <div class="zero-progress">
+              <div class="zero-track" id="zero-track" aria-hidden="true"></div>
+              <span id="zero-count">0 / 6 zeros found</span>
+            </div>
           </div>
         </div>
-        <div class="anim-readout">
-          <span id="t-readout" class="t-readout">t = 0.00</span>
-          <div class="zero-progress">
-            <div class="zero-track" id="zero-track" aria-hidden="true"></div>
-            <span id="zero-count">0 / 6 zeros found</span>
+
+        <div class="control-group control-group-vlines">
+          <h3>Animate vertical line family &nbsp;<span class="math">&sigma; = -1 &hellip; 2</span></h3>
+          <div class="anim-row">
+            <div class="anim-buttons">
+              <button id="btn-vlines-play" type="button" class="btn btn-primary">Play</button>
+              <button id="btn-vlines-reset" type="button" class="btn">Reset</button>
+            </div>
+            <div class="speed-control">
+              <label for="vlines-speed">Speed &mdash; <span id="vlines-speed-value">80</span> lines/s</label>
+              <input id="vlines-speed" type="range" min="10" max="200" step="10" value="80" />
+            </div>
           </div>
+          <div class="anim-readout">
+            <span id="vlines-readout" class="t-readout">0 / 100 lines</span>
+          </div>
+          <p class="panel-hint vlines-hint">100 lines, evenly spaced in &sigma;, each from t = -1 to t = +1</p>
         </div>
       </div>
     </section>

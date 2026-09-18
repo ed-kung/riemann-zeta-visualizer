@@ -207,8 +207,20 @@ body {
   color: var(--ink-secondary);
 }
 
-.control-group-anim {
+.control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   flex: 1 1 380px;
+}
+
+.control-group-anim,
+.control-group-vlines {
+  flex: none;
+}
+
+.vlines-hint {
+  margin: 10px 0 0;
 }
 
 .btn {
