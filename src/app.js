@@ -477,6 +477,8 @@ inputCanvas.addEventListener('pointercancel', endStroke);
 btnClear.addEventListener('click', () => {
   strokes.length = 0;
   colorIdx = 0;
+  resetAnim();
+  setPlaying(false);
   dirty = true;
 });
 
