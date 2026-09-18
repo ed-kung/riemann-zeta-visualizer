@@ -20,9 +20,9 @@ then open `http://localhost:8000`.
 
 ## Deploy to GitHub Pages
 
-Push to `main` — `.github/workflows/pages.yml` builds and deploys the site
-automatically. The only one-time setup is enabling it: in the repo's
-**Settings → Pages**, set **Source** to **GitHub Actions**.
+Pages is configured to deploy from the `main` branch (**Settings → Pages →
+Source: Deploy from a branch**), so pushing to `main` is enough — no build
+step or workflow required.
 
 ## How it works
 
